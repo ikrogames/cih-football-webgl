@@ -1,19 +1,17 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html lang="fr">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Unity WebGL Player | CIHFOOT</title>
+    <title>Unity WebGL Player | Africa Football Legends</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico" />
-    <link rel="stylesheet" href="TemplateData/style.css" />
 
-    <!-- Firebase SDK (compat version) | KEEP -->
+    <!-- Firebase SDK (compat version) -->
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
     <script>
-        // Firebase config | KEEP
+        // Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyB0qaD4Ct5cp3Wjcp1485ij8gSfLVf44dY",
             authDomain: "cih-football.firebaseapp.com",
@@ -28,146 +26,147 @@
     </script>
 
     <style>
-        html, body { margin: 0; height: 100%; background: #fff; }
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: #231F20;
+            overflow: hidden;
+        }
 
-        /* Desktop: center fixed canvas size */
+        /* Unity container */
         #unity-container {
             width: 100vw; height: 100vh;
-            display: flex; align-items: center; justify-content: center;
-            position: relative; background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #231F20;
         }
 
-        /* Footer pinned to bottom (hidden on touch devices via @media) */
-        #unity-footer {
-            position: absolute; left: 0; right: 0; bottom: 0;
-            display: flex; justify-content: center;
-            pointer-events: none; padding: 0 12px 8px;
+        #unity-canvas {
+            background: #231F20;
         }
-        #unity-footer > * { pointer-events: auto; }
 
-        /* Mobile: full-bleed when class is present */
+        /* Custom loading screen */
+        #Chargement {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            font-family: sans-serif;
+            transition: opacity 0.5s ease;
+            z-index: 10;
+        }
+        #Chargement img {
+            width: 250px; max-width: 70%; height: auto;
+            display: block; margin: 0 auto;
+        }
+        #Chargement p {
+            margin-top: 20px;
+        }
+
+        /* Rotate warning for portrait */
+        #rotate-warning {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #231F20;
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-family: sans-serif;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Mobile full screen (DISABLED) */
         #unity-container.unity-mobile,
         #unity-canvas.unity-mobile {
             width: 100vw; height: 100vh; display: block;
         }
-
-        /* Hide footer on touch devices */
-        @media (pointer: coarse) {
-            #unity-footer { display: none !important; }
-        }
-
-        /* Optional: iOS safe-area padding */
-        .pad-safe {
-            padding: env(safe-area-inset-top) env(safe-area-inset-right)
-            env(safe-area-inset-bottom) env(safe-area-inset-left);
-        }
     </style>
 </head>
 <body>
-<div id="unity-container" class="unity-desktop pad-safe">
+<div id="unity-container" class="unity-desktop">
+    <!-- Unity canvas -->
     <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
 
-    <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-            <div id="unity-progress-bar-full"></div>
-        </div>
-    </div>
-
-    <div id="unity-warning"></div>
-
-    <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">CIHFOOT</div>
+    <!-- Custom loading -->
+    <div id="Chargement">
+        <img src="logo.png" alt="Studio Logo">
+        <p>Chargement...</p>
     </div>
 </div>
 
+<!-- Rotate warning -->
+<div id="rotate-warning">Veuillez tourner votre téléphone en mode paysage</div>
+
 <script>
-    // --- Basic Unity template wiring ---
     const container = document.getElementById("unity-container");
     const canvas = document.getElementById("unity-canvas");
-    const loadingBar = document.getElementById("unity-loading-bar");
-    const progressBarFull = document.getElementById("unity-progress-bar-full");
-    const fullscreenButton = document.getElementById("unity-fullscreen-button");
-    const warningBanner = document.getElementById("unity-warning");
+    const loading = document.getElementById("Chargement");
+    const rotateWarning = document.getElementById("rotate-warning");
 
-    function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-            warningBanner.style.display = warningBanner.children.length ? "block" : "none";
-        }
-        const div = document.createElement("div");
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type === "error") div.style = "background: red; padding: 10px;";
-        else {
-            if (type === "warning") div.style = "background: yellow; padding: 10px;";
-            setTimeout(() => { warningBanner.removeChild(div); updateBannerVisibility(); }, 5000);
-        }
-        updateBannerVisibility();
-    }
-
-    // Build paths (update names if your build output differs)
+    // Build paths
     const buildUrl = "Build";
-    const loaderUrl = buildUrl + "/CIHTest.loader.js";
+    const loaderUrl = buildUrl + "/Africa Football Legends.loader.js";
     const config = {
-        dataUrl: buildUrl + "/CIHTest.data",
-        frameworkUrl: buildUrl + "/CIHTest.framework.js",
-        codeUrl: buildUrl + "/CIHTest.wasm",
+        dataUrl: buildUrl + "/Africa Football Legends.data",
+        frameworkUrl: buildUrl + "/Africa Football Legends.framework.js",
+        codeUrl: buildUrl + "/Africa Football Legends.wasm",
         streamingAssetsUrl: "StreamingAssets",
-        companyName: "IkroGames",
-        productName: "CIHFOOT",
-        productVersion: "0.1",
-        showBanner: unityShowBanner
+        companyName: "Ikro Games",
+        productName: "Africa Football Legends",
+        productVersion: "1.0",
     };
 
-    // Mobile vs Desktop sizing
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+    // Mobile detection
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
         const meta = document.createElement("meta");
         meta.name = "viewport";
         meta.content = "width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes";
         document.head.appendChild(meta);
-        container.classList.remove("unity-desktop");
-        container.classList.add("unity-mobile");
-        canvas.classList.add("unity-mobile");
-        // Optional perf tweak:
-        // config.devicePixelRatio = 1;
+
+        // 🔴 Removed fullscreen forcing on mobile
+        // container.classList.remove("unity-desktop");
+        // container.classList.add("unity-mobile");
+        // canvas.classList.add("unity-mobile");
     } else {
-        // Desktop: keep fixed 960x600; container centers it
+        // Desktop fixed size and centered
         canvas.style.width = "960px";
         canvas.style.height = "600px";
     }
 
-    loadingBar.style.display = "block";
-
-    // Desktop footer → fullscreen the container
-    function requestContainerFullscreen() {
-        const el = document.getElementById("unity-container");
-        if (!el) return;
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari
+    // Orientation lock → landscape only on mobile
+    function checkOrientation() {
+        if (isMobile) {
+            if (window.innerHeight > window.innerWidth) {
+                // Portrait → show warning
+                rotateWarning.style.display = "flex";
+                container.style.display = "none";
+            } else {
+                // Landscape → show game
+                rotateWarning.style.display = "none";
+                container.style.display = "flex";
+            }
+        }
     }
+    window.addEventListener("resize", checkOrientation);
+    checkOrientation();
 
+    // Load Unity
     const script = document.createElement("script");
     script.src = loaderUrl;
     script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-            progressBarFull.style.width = (100 * progress) + "%";
-        }).then((unityInstance) => {
+        createUnityInstance(canvas, config).then((unityInstance) => {
             window.unityInstance = unityInstance;
-            loadingBar.style.display = "none";
-
-            if (fullscreenButton) {
-                fullscreenButton.onclick = () => { requestContainerFullscreen(); };
-            }
-
-            // NOTE:
-            // No rotate/fullscreen overlay is created here.
-            // After Firebase auth succeeds, your C# should call:
-            //   ShowGateAfterAuthMobile();  // defined in Fullscreen.jslib
-            // That function will dynamically create the rotate gate,
-            // enable Continue in landscape, and request fullscreen on tap.
-
+            loading.style.opacity = 0;
+            setTimeout(() => loading.style.display = "none", 500);
         }).catch((message) => {
             alert(message);
         });
